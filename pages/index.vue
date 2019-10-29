@@ -1,13 +1,13 @@
 <template lang="pug">
   .theChat
     ChatList
-      ChatMessage(
-        v-if="messageList.length > 0",
-        v-for="message in messageList",
-        :key="message.id",
-        :author="message.author",
-        :text="message.text",
-      ) {{ message.text }}
+      template(v-if="messageList.length > 0")
+        ChatMessage(
+          v-for="message in messageList",
+          :key="message.id",
+          :author="message.author",
+          :text="message.text",
+        ) {{ message.text }}
       p(v-else) На данный момент сообщений нет. Напишите что-нибудь в чат.
 
     ChatForm(
@@ -39,7 +39,7 @@ export default {
       event.preventDefault();
       const { messageText } = this;
 
-      if (this.isLoad === true || messageText === '') return;
+      if (this.isLoad === true || /^\s{0,}$/.test(messageText)) return;
       this.isLoad = true;
 
       try {
@@ -54,13 +54,21 @@ export default {
           { author: 'server', text: response.text },
         );
 
+        localStorage.setItem('chatHistory', JSON.stringify(this.messageList));
         this.messageText = '';
       } catch(error) {
-        this.messageList.push({ author: 'system', text: error });
+        this.messageList.push({ author: 'system', text: error.toString() });
       } finally {
         this.isLoad = false;
       }
     },
+  },
+  mounted() {
+    const messagesHistory = localStorage.getItem('chatHistory');
+
+    if (messagesHistory) {
+      this.messageList = JSON.parse(messagesHistory);
+    }
   }
 }
 </script>
@@ -71,6 +79,6 @@ export default {
     flex-direction: column;
     margin: 0 auto;
     height: 100vh;
-    width: 80%;
+    width: 90%;
   }
 </style>
